@@ -45,19 +45,6 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize a list to hold the Text widgets
-    List<Widget> taskWidgets = [];
-
-    // Use a for loop to build the list of widgets
-    for (var task in tasklist) {
-      taskWidgets.add(
-        Text(
-          task['task_name'] ?? 'No Task Name', // Safely access 'task_name'
-          style: TextStyle(fontSize: 18), // Optional: style for the text
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -78,8 +65,90 @@ class _HomeState extends State<Home> {
               ))
         ],
       ),
-      body: Column(
-        children: [Text('workin')], // Use the list of Text widgets
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(0.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                    stream: _firebaseFirestore
+                        .collection('tasks')
+                        .where('user_UID', isEqualTo: userUID)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.active) {
+                        if (snapshot.hasData && snapshot.data != null) {
+                          return ListView.builder(
+                            itemCount: snapshot.data!.docs.length,
+                            itemBuilder: (context, index) {
+                              Map<String, dynamic> taskData =
+                                  snapshot.data?.docs[index].data()
+                                      as Map<String, dynamic>;
+                              DocumentSnapshot document =
+                                  snapshot.data!.docs[index];
+
+                              return Column(
+                                children: [
+                                  CheckboxListTile(
+                                      title: Text(
+                                        taskData['task_name'],
+                                        style: TextStyle(
+                                            decoration:
+                                                (taskData['is_Completed'])
+                                                    ? TextDecoration.lineThrough
+                                                    : TextDecoration.none),
+                                      ),
+                                      activeColor: Colors.green[600],
+                                      tileColor: (taskData['is_Completed'])
+                                          ? Colors.green[100]
+                                          : Colors.grey[50],
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                      value: (taskData['is_Completed'])
+                                          ? true
+                                          : false,
+                                      onChanged: (bool? value) {
+                                        if (value != null) {
+                                          // Update Firestore with new value
+                                          _firebaseFirestore
+                                              .collection('tasks')
+                                              .doc(document.id)
+                                              .update({
+                                            'is_Completed': value
+                                          }).catchError((error) {
+                                            // Handle errors
+                                            print(
+                                                "Error updating document: $error");
+                                          });
+                                        }
+                                      },
+                                      secondary: IconButton(
+                                          onPressed: () {
+                                            deleteTask(document.id);
+                                          },
+                                          icon: Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ))),
+                                  const Divider(height: 0),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          return Text('Error Displaing Data');
+                        }
+                      } else {
+                        return Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                    }),
+              )
+            ], // Use the list of Text widgets
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -146,6 +215,22 @@ class _HomeState extends State<Home> {
       tasklist = querySnapshot.docs
           .map((doc) => doc.data() as Map<String, dynamic>)
           .toList();
+    } catch (e) {
+      log(e.toString());
+    }
+  }
+
+  void deleteTask(String id) async {
+    try {
+      await _firebaseFirestore.collection('tasks').doc(id).delete();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(10),
+          backgroundColor: Colors.green,
+          content: Text(
+            'Task Deleted..!',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          )));
     } catch (e) {
       log(e.toString());
     }

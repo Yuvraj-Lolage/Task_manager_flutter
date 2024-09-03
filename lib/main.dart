@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:todo_app_flutter/pages/forgot_password.dart';
 import 'package:todo_app_flutter/pages/homepage.dart';
 import 'package:todo_app_flutter/pages/login.dart';
 import 'package:todo_app_flutter/pages/signup.dart';
@@ -19,6 +20,7 @@ void main() async {
       '/': (context) => const Login(),
       '/signup': (context) => const Signup(),
       '/home': (context) => const Home(),
+      '/forgotPassword': (context) => ForgotPassword(),
     },
   ));
 }

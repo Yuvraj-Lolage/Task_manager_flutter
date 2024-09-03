@@ -153,6 +153,14 @@ class _LoginState extends State<Login> {
                               fontSize: 20),
                         )),
                   ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/forgotPassword');
+                        },
+                        child: Text('Forgot password?')),
+                  ),
                   const SizedBox(
                     height: 20,
                   ),
